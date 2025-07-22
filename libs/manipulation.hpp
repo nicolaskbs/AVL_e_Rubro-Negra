@@ -2,23 +2,14 @@
 
 #include <string>
 #include <vector>
-#include <algorithm>
-#include <random>
-
 #include "user.hpp"
 #include "avl.hpp"
+#include "red_black.hpp"
 
 namespace Manipulation {
-
-    std::vector<User> get_users_from_json(std::string);
-
-    void shuffle_users_vector(std::vector<User> &);
-
-    AVL get_avl_from_vector(std::vector<User> &);
-
-    Red_Black get_red_black_from_vector(std::vector<User> &);
-
-    void remove_primes_IDs(AVL &);
-
-    void remove_primes_IDs(Red_Black &);
+    void shuffle_users_vector(std::vector<User>& users);
+    std::vector<User> get_users_from_json(std::string file);
+    AVL get_avl_from_vector(const std::vector<User>& users);
+    Red_Black get_red_black_from_vector(const std::vector<User>& users);
+    void remove_primes_IDs(Tree& tree, const std::vector<User>& users);
 }

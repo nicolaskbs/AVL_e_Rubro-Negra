@@ -1,110 +1,102 @@
 #include "../libs/all_libs.hpp"
 
-void Tree::printTree_private(Node* root_of_subtree,
-                     const std::string& prefix = "",
-                     bool is_left = true){
+Tree::~Tree() {
+    destroy_tree(root);
+}
 
-    if (root_of_subtree == nullptr) {
+void Tree::destroy_tree(Node* node) {
+    if (node) {
+        destroy_tree(node->left_child);
+        destroy_tree(node->right_child);
+        delete node;
+    }
+}
+
+void Tree::printTree_private(Node* node, const std::string& prefix, bool is_left) {
+    if (node == nullptr) {
         return;
     }
 
-    if (root_of_subtree->right_child) {
-        printTree_private(root_of_subtree->right_child, 
-                  prefix + (is_left ? "│   " : "    "), 
-                  false);
+    if (node->right_child) {
+        printTree_private(node->right_child, prefix + (is_left ? "│   " : "    "), false);
     }
 
-    std::cout << prefix 
-              << (is_left ? "└── " : "┌── ") 
-              << root_of_subtree->user.userid
-              << std::endl;
-
-    if (root_of_subtree->left_child) {
-        printTree_private(root_of_subtree->left_child,
-                  prefix + (is_left ? "    " : "│   "),
-                  true);
-    }
-}
-
-void Tree::printTree(){
-    printTree_private(pointer_to_root, "", true);
-}
-
-void Tree::insert(User user){
-    if(this->pointer_to_root == nullptr){
-        this->pointer_to_root = new Node(user, nullptr);
-    } else{
-        insert_non_empty(user, this->pointer_to_root, nullptr);
-    }
-}
-
-void Tree::insert_non_empty(User user,
-                            Node* current_node, 
-                            Node* parent){
-    bool is_left_side;
-    if(user.userid <= current_node->user.userid ){
-        parent = current_node;
-        current_node = current_node->left_child;
-        is_left_side = true;
-    } else if(user.userid  > current_node->user.userid ){
-        parent = current_node;
-        current_node = current_node->right_child;
-        is_left_side = false;
-    }
-    if(current_node == nullptr){
-        current_node = new Node(user, parent);
-        if(is_left_side){
-            parent->left_child = current_node;
-        } else{
-            parent->right_child = current_node;
-        }
-        return;
-    }
-    insert_non_empty(user, current_node, parent);
-}
-
-void Tree::remove(User user){
-    recursive_remove(user, this->pointer_to_root);
-}
-
-void Tree::recursive_remove(User user, Node* current_node){
-    if(current_node == nullptr){
-        return;
-    }
-    if(current_node->user.userid < user.userid){
-        recursive_remove(user, current_node->right_child);
-    } else if(current_node->user.userid > user.userid){
-        recursive_remove(user, current_node->left_child);
+    std::cout << prefix << (is_left ? "└── " : "┌── ");
+    if (dynamic_cast<Red_Black*>(this) && node->color == RED) { // Cor para diferenciar nós vermelhos
+        std::cout << "\033[31m" << node->user.userid << "\033[0m" << std::endl;
     } else {
-        if(current_node->left_child == nullptr 
-            && current_node->right_child == nullptr){
-            if(current_node->parent == nullptr){
-            } else if(current_node->parent->left_child == current_node){
-                current_node->parent->right_child = nullptr;
+        std::cout << node->user.userid << std::endl;
+    }
+
+    if (node->left_child) {
+        printTree_private(node->left_child, prefix + (is_left ? "    " : "│   "), true);
+    }
+}
+
+void Tree::printTree() {
+    if (root == nullptr) {
+        std::cout << "A árvore está vazia." << std::endl;
+    } else {
+        printTree_private(root, "", true);
+    }
+    std::cout << "----------------------------------------" << std::endl;
+}
+
+void Tree::insert(User user) {
+    root = insert_private(root, user);
+}
+
+void Tree::remove(User user) {
+    root = remove_private(root, user);
+}
+
+Node* Tree::insert_private(Node* node, User user) {
+    if (node == nullptr) {
+        return new Node(user, nullptr);
+    }
+
+    if (user.userid < node->user.userid) {
+        node->left_child = insert_private(node->left_child, user);
+        if(node->left_child) node->left_child->parent = node;
+    } else if (user.userid > node->user.userid) {
+        node->right_child = insert_private(node->right_child, user);
+        if(node->right_child) node->right_child->parent = node;
+    }
+    return node;
+}
+
+Node* Tree::remove_private(Node* node, User user) {
+    if (node == nullptr) {
+        return node;
+    }
+
+    if (user.userid < node->user.userid) {
+        node->left_child = remove_private(node->left_child, user);
+    } else if (user.userid > node->user.userid) {
+        node->right_child = remove_private(node->right_child, user);
+    } else {
+        if (node->left_child == nullptr || node->right_child == nullptr) {
+            Node* temp = node->left_child ? node->left_child : node->right_child;
+            if (temp == nullptr) {
+                temp = node;
+                node = nullptr;
             } else {
-                current_node->parent->right_child = nullptr;
+                *node = *temp;
             }
-            delete current_node;
-            //this->quantidade_nodes--;
+            delete temp;
         } else {
-            Node* folha = find_leaf(user, current_node);
-            current_node->user = folha->user;
-            recursive_remove(folha->user, folha);
+            Node* temp = find_min(node->right_child);
+            node->user = temp->user;
+            node->right_child = remove_private(node->right_child, temp->user);
         }
     }
+    return node;
 }
 
-Node* Tree::find_leaf(User user, Node* current_node){
-    if(current_node->left_child != nullptr){
-        current_node = current_node->left_child;
-        while(current_node->right_child){
-            current_node = current_node->right_child;
-        }
-    } else {
-        current_node = current_node->right_child;
-        while(current_node->left_child){
-            current_node = current_node->left_child;
-        }
+Node* Tree::find_min(Node* node) {
+    Node* current = node;
+    while (current && current->left_child != nullptr) {
+        current = current->left_child;
     }
-    return current_node;
+    return current;
 }

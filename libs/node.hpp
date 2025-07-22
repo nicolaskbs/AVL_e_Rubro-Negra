@@ -1,7 +1,3 @@
-// O nó contém tanto cor quanto altura
-// A árvore rubro-negra utiliza apenas cor
-// A árvore AVL utiliza apenas altura
-
 #pragma once
 
 #include "user.hpp"
