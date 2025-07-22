@@ -17,9 +17,9 @@ struct Node {
     int height;
     Color color;
 
-    Node(User user, 
-        Node* parent) 
-        : user(user),
-        parent(parent) {}
+    Node(User u, 
+        Node* p) 
+        : user(u),
+        parent(p) {}
 
 };
